@@ -3,8 +3,9 @@
 
 -- Ranking dos residentes por número de atendimentos realizados (mostrar nome e total)
 SELECT p.nome, COUNT(a.id_residente) AS quantidade_atendimentos
-FROM PESSOA p
-INNER JOIN ATENDIMENTO a
+FROM RESIDENTE r
+INNER JOIN PESSOA p ON p.id_pessoa = r.id_pessoa
+LEFT JOIN ATENDIMENTO a
 ON a.id_residente = p.id_pessoa
 GROUP BY p.nome
 ORDER BY quantidade_atendimentos DESC;
