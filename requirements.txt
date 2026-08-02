@@ -4,3 +4,4 @@ psycopg2-binary
 # Interface web (interface.py)
 streamlit
 pandas
+sqlalchemy>=2.0.0
