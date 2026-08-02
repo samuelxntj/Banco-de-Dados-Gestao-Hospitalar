@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from bd import SessionLocal
 
@@ -141,12 +141,59 @@ dia/turno para outro, desde que não gere conflito (mesmo
 unidade+dia+turno+residente).
 """
 
-""" |================= AINDA FAZENDO =================|
+""" |================= AINDA FAZENDO =================| """
 def reajustar_escala(id_residente, dia_atual, turno_atual, novo_dia, novo_turno):
-    try:
-        pass
+    dias_validos = ["SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA", "SABADO", "DOMINGO"]
+    turnos_validos = ["MANHA", "TARDE", "NOITE"]
 
+
+    dia_atual = dia_atual.strip().upper()
+    turno_atual = turno_atual.strip().upper()
+    novo_dia = novo_dia.strip().upper()
+    novo_turno = novo_turno.strip().upper()
+
+    if dia_atual not in dias_validos or novo_dia not in dias_validos:
+        raise ValueError("Dia inválido. Use: SEGUNDA, TERCA, QUARTA, QUINTA, SEXTA, SABADO, DOMINGO.")
+
+    if turno_atual not in turnos_validos or novo_turno not in turnos_validos:
+        raise ValueError("Turno inválido. Use: MANHA, TARDE, NOITE.")
+
+    if dia_atual == novo_dia and turno_atual == novo_turno:
+        raise ValueError("O novo dia e turno devem ser diferentes do atual.")
+
+
+    try:
+        with SessionLocal.begin() as session:
+            resultado = session.execute(
+                text("""
+                    UPDATE escala_plantao
+                    SET
+                        dia_semana = :novo_dia,
+                        turno = :novo_turno
+                    WHERE id_residente = :id_residente
+                      AND dia_semana = :dia_atual
+                      AND turno = :turno_atual
+                    RETURNING id_escala
+                """),
+                {
+                    "id_residente": id_residente,
+                    "dia_atual": dia_atual,
+                    "turno_atual": turno_atual,
+                    "novo_dia": novo_dia,
+                    "novo_turno": novo_turno,
+                },
+            )
+
+            ids_alterados = resultado.scalars().all()
+
+            if not ids_alterados:
+                raise ValueError("Nenhuma escala foi encontrada para o residente ")
+
+        return ids_alterados
+
+
+    except IntegrityError as erro:
+        raise ValueError("O reajuste causaria conflito com uma escala existente.") from erro
 
     except SQLAlchemyError as erro:
-        raise RuntimeError("Não foi possível reajustar a escala.") from erro 
-"""
+        raise RuntimeError("Não foi possível reajustar a escala.") from erro
