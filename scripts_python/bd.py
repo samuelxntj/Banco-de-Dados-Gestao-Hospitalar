@@ -5,17 +5,15 @@ import os
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from sgbd import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
-# A conexão fica no ambiente para não gravar usuário e senha.
-DATABASE_URL = os.environ.get("DATABASE_URL")
 
-if not DATABASE_URL:
-    # mensagem de erro
-    raise RuntimeError(
-        "A variável DATABASE_URL não foi definida. "
-        "Use uma URL no formato "
-        "postgresql+psycopg2://usuario:senha@localhost:5432/banco."
-    )
+# A conexão pode vir do ambiente, para não gravar usuário e senha em disco.
+# Se a variável não estiver definida, cai nas mesmas constantes usadas pelos
+# scripts em SQL puro (sgbd.py), para não exigir configuração extra do time.
+DATABASE_URL = os.environ.get("DATABASE_URL") or (
+    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
 
 
 # administra o acesso ao PostgreSQL e o conjunto de conexões reutilizáveis:

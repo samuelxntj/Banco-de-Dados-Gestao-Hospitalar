@@ -178,7 +178,7 @@ class Procedimento(Base):
     id_procedimento: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
-    tempo_medio_exec_min: Mapped[int] = mapped_column(Integer, nullable=False)
+    tempo_medio_execucao: Mapped[int] = mapped_column(Integer, nullable=False)
     nivel_risco: Mapped[str] = mapped_column(String(10), default="BAIXO", nullable=False)
 
     atendimentos_procedimentos: Mapped[List["AtendimentoProcedimento"]] = relationship(back_populates="procedimento")
