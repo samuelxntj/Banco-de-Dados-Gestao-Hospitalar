@@ -7,7 +7,8 @@ INSERT INTO ATENDIMENTO (
     id_residente,
     dt_inicio_residente,
     id_preceptor,
-    dt_inicio_preceptor
+    dt_inicio_preceptor,
+    id_unidade
 )
 VALUES (
     TIMESTAMP '2026-07-07 08:30:00',
@@ -41,6 +42,11 @@ VALUES (
       FROM PRECEPTOR pr
       INNER JOIN PROFISSIONAL pro ON pro.id_pessoa = pr.id_pessoa
       WHERE pro.crm = '4004-PB' AND pr.dt_fim IS NULL
+    ),
+    (
+      SELECT u.id_unidade
+      FROM UNIDADE u
+      WHERE u.nome = 'AMBULATORIO'
     )
 );
 

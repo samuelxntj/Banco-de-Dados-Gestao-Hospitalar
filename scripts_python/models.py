@@ -3,13 +3,14 @@ from typing import List, Optional
 
 from sqlalchemy import (
     String, Integer, Boolean, Date, DateTime, Numeric, Text,
-    ForeignKey, ForeignKeyConstraint, CheckConstraint, UniqueConstraint, PrimaryKeyConstraint
+    ForeignKey, ForeignKeyConstraint, CheckConstraint, UniqueConstraint
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 # Classe Base Declarativa do SQLAlchemy 2.0
 class Base(DeclarativeBase):
     pass
+
 
 
 # HIERARQUIA DE PESSOAS (Joined Table Inheritance)
@@ -45,7 +46,6 @@ class Paciente(Base):
     num_convenio: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     grupo_sanguineo: Mapped[str] = mapped_column(String(3), nullable=False)
 
-    # Flags para alinhar com a FK Composta da tabela Pessoa
     is_paciente_flag: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_profissional_flag: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
@@ -129,7 +129,6 @@ class Preceptor(Base):
     escala_plantoes: Mapped[List["EscalaPlantao"]] = relationship(back_populates="preceptor")
 
 
-
 # TABELAS DE APOIO (Telefone e Alergias)
 
 class Telefone(Base):
@@ -154,7 +153,7 @@ class AlergiaPaciente(Base):
     __tablename__ = "alergia_paciente"
 
     id_pessoa: Mapped[int] = mapped_column(Integer, ForeignKey("paciente.id_pessoa", ondelete="CASCADE"), primary_key=True)
-    id_alergia: Mapped[int] = mapped_column(Integer, ForeignKey("alergia.id_alergia", ondelete="RESTRICT"), primary_key=True)
+    id_alergia: Mapped[int] = mapped_column(Integer, ForeignKey("alergia.id_alergia", ondelete="CASCADE"), primary_key=True)
 
     paciente: Mapped["Paciente"] = relationship(back_populates="alergias_paciente")
     alergia: Mapped["Alergia"] = relationship(back_populates="alergias_paciente")
@@ -163,11 +162,16 @@ class AlergiaPaciente(Base):
 
 # OPERACIONAL (Unidade, Procedimento, Atendimento e Escalas)
 
+
 class Unidade(Base):
     __tablename__ = "unidade"
 
     id_unidade: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nome: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    nome: Mapped[str] = mapped_column(String(14), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("nome IN ('ENFERMARIA', 'UTI', 'PRONTO-SOCORRO', 'AMBULATORIO')", name="ck_nome"),
+    )
 
     escala_plantoes: Mapped[List["EscalaPlantao"]] = relationship(back_populates="unidade")
 
@@ -178,8 +182,13 @@ class Procedimento(Base):
     id_procedimento: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
-    tempo_medio_exec_min: Mapped[int] = mapped_column(Integer, nullable=False)
-    nivel_risco: Mapped[str] = mapped_column(String(10), default="BAIXO", nullable=False)
+    tempo_medio_execucao: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    media_tempo_procedimento: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    nivel_risco: Mapped[str] = mapped_column(String(5), default="BAIXO", nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("nivel_risco IN ('ALTO', 'MEDIO', 'BAIXO')", name="ck_nivel_risco"),
+    )
 
     atendimentos_procedimentos: Mapped[List["AtendimentoProcedimento"]] = relationship(back_populates="procedimento")
 
@@ -193,12 +202,13 @@ class Atendimento(Base):
     
     id_paciente: Mapped[int] = mapped_column(Integer, ForeignKey("paciente.id_pessoa", ondelete="RESTRICT"), nullable=False)
     
-    # Chaves estrangeiras compostas para respeitar a chave primária de Residente e Preceptor (Histórico)
     id_residente: Mapped[int] = mapped_column(Integer, nullable=False)
     dt_inicio_residente: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     
     id_preceptor: Mapped[int] = mapped_column(Integer, nullable=False)
     dt_inicio_preceptor: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    id_unidade: Mapped[int] = mapped_column(Integer, ForeignKey("unidade.id_unidade", ondelete="RESTRICT"), nullable=False)
 
     __table_args__ = (
         ForeignKeyConstraint(
@@ -212,6 +222,11 @@ class Atendimento(Base):
             ["preceptor.id_pessoa", "preceptor.dt_inicio"],
             ondelete="RESTRICT",
             name="fk_atendimento_preceptor"
+        ),
+        CheckConstraint("duracao_minutos > 0", name="ck_atendimento_duracao"),
+        CheckConstraint(
+            "id_residente <> id_preceptor AND id_paciente <> id_residente AND id_paciente <> id_preceptor",
+            name="ck_atendimento_papeis"
         ),
     )
 
@@ -232,8 +247,14 @@ class AtendimentoProcedimento(Base):
     
     qtd_executada: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     tempo_real_gasto: Mapped[int] = mapped_column(Integer, nullable=False)
-    observacao_intercorrencias: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    observacao_intercorrencias: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    dt_hora_inicio: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     is_faturado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("qtd_executada > 0", name="ck_atend_proc_qtd"),
+        CheckConstraint("tempo_real_gasto >= 0", name="ck_atend_proc_tempo"),
+    )
 
     # Relacionamentos
     atendimento: Mapped["Atendimento"] = relationship(back_populates="procedimentos_associados")
@@ -244,8 +265,8 @@ class EscalaPlantao(Base):
     __tablename__ = "escala_plantao"
 
     id_escala: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    dia_semana: Mapped[str] = mapped_column(String(15), nullable=False)
-    turno: Mapped[str] = mapped_column(String(10), nullable=False)
+    dia_semana: Mapped[str] = mapped_column(String(8), nullable=False)
+    turno: Mapped[str] = mapped_column(String(6), nullable=False)
     
     id_unidade: Mapped[int] = mapped_column(Integer, ForeignKey("unidade.id_unidade", ondelete="RESTRICT"), nullable=False)
     
@@ -268,9 +289,10 @@ class EscalaPlantao(Base):
             ondelete="RESTRICT",
             name="fk_escala_preceptor"
         ),
-        UniqueConstraint("id_unidade", "dia_semana", "turno", "id_residente", name="un_escala_residente_turno"),
-        CheckConstraint("dia_semana IN ('SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA', 'SABADO', 'DOMINGO')", name="ck_dia_semana"),
-        CheckConstraint("turno IN ('MANHA', 'TARDE', 'NOITE')", name="ck_turno"),
+        UniqueConstraint("id_unidade", "dia_semana", "turno", "id_residente", name="un_escala_residente"),
+        CheckConstraint("dia_semana IN ('SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA', 'SABADO', 'DOMINGO')", name="ck_escala_dia"),
+        CheckConstraint("turno IN ('MANHA', 'TARDE', 'NOITE')", name="ck_escala_turno"),
+        CheckConstraint("id_residente <> id_preceptor", name="ck_escala_papeis"),
     )
 
     # Relacionamentos

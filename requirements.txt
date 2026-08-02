@@ -1,7 +1,12 @@
 # Driver do PostgreSQL (usado por sgbd.py e consultas.py)
 psycopg2-binary
 
+# ORM (usado por bd.py, models.py e consultas_orm.py)
+SQLAlchemy
+
 # Interface web (interface.py)
 streamlit
 pandas
-sqlalchemy>=2.0.0
+
+# ORM e execução das procedures em Python
+SQLAlchemy

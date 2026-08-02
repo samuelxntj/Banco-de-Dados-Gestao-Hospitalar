@@ -10,6 +10,9 @@ Um Atendimento ocorre em uma data e horário específicos, com duração registr
 
 O hospital possui Unidades (Enfermaria, UTI, Pronto-Socorro, Ambulatório). Os residentes e preceptores se organizam em Escalas de Plantão. Em uma escala, define-se: uma unidade, um dia da semana (segunda a domingo), um turno (manhã, tarde, noite), um residente e um preceptor responsável pela supervisão naquele plantão. Uma combinação de unidade, dia, turno, residente e preceptor é única (não pode haver o mesmo residente no mesmo local/dia/turno com dois preceptores distintos). O mesmo preceptor pode supervisionar vários residentes no mesmo plantão (desde que em unidades ou turnos diferentes), mas para cada residente registra-se um único preceptor supervisor por plantão.
 
+> **Etapa 2:** o mapa do que já está pronto e do que falta está em
+> [`ETAPA2_STATUS.md`](ETAPA2_STATUS.md).
+
 ## Como executar o SGBD
 
 Os scripts Python ficam em `scripts_python/` e os arquivos SQL em `scripts_SQL/`.
@@ -114,7 +117,20 @@ Além dos scripts de linha de comando, há uma interface gráfica em Streamlit
 - **Visualizar Tabelas** — escolher uma tabela e ver seu conteúdo;
 - **Executar CRUDs e Consultas Básicas** — rodar, uma a uma, as consultas do `CRUD_Consultas.sql`;
 - **Executar Consultas Analíticas** — rodar as 4 consultas do `consultas_analiticas.sql`;
+- **SQL Livre** — escrever e executar qualquer comando SQL;
 - **RESETAR DATABASE** — recriar e popular o banco do zero (DROP + CREATE + INSERT).
+
+Nas telas de **CRUDs** e de **Consultas Analíticas**, a consulta escolhida aparece já
+preenchida num editor de texto e **pode ser alterada antes de executar** — dá para trocar
+um nome, um filtro ou reescrever a consulta inteira. Cada consulta guarda a sua própria
+edição, então trocar de consulta e voltar não perde o que foi escrito; o botão
+**"Restaurar consulta original"** traz de volta o texto do arquivo `.sql`.
+
+Na tela **SQL Livre**, o editor começa em branco e aceita qualquer comando (`SELECT`,
+`INSERT`, `UPDATE`, `DELETE`, DDL). Por padrão, vários comandos separados por `;` são
+executados em sequência e o resultado de cada um é exibido. Marque
+**"Executar como bloco único"** para mandar o texto inteiro de uma vez — necessário para
+comandos que têm `;` dentro do corpo, como `CREATE FUNCTION ... $$ ... $$ LANGUAGE plpgsql;`.
 
 A interface depende do `streamlit` e do `pandas` (já incluídos no `requirements.txt`) e usa
 as mesmas credenciais definidas no `sgbd.py`. Rode a partir da raiz do projeto:

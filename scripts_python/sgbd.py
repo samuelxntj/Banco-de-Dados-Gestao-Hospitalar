@@ -18,12 +18,15 @@ DB_PASSWORD = "hospital"
 # Arquivos SQL
 ARQUIVO_TABELAS = "scripts_SQL/tables.sql"
 ARQUIVO_DADOS = "scripts_SQL/adicionando_dados.sql"
+ARQUIVO_TRIGGERS = "scripts_SQL/triggers.sql"
 
 # Todas as tabelas, para o DROP.
 TABELAS = [
     "ATENDIMENTO_PROCEDIMENTO",
+    "AUDITORIA_ATENDIMENTO",
     "ESCALA_PLANTAO",
     "ATENDIMENTO",
+    "INTERNACAO",
     "ALERGIA_PACIENTE",
     "ALERGIA",
     "TELEFONE",
@@ -66,6 +69,7 @@ def main():
         apagar_tabelas(cursor)
         executar_arquivo_sql(cursor, ARQUIVO_TABELAS)
         executar_arquivo_sql(cursor, ARQUIVO_DADOS)
+        executar_arquivo_sql(cursor, ARQUIVO_TRIGGERS)
 
         conn.commit()
         print("Banco Criado.")
