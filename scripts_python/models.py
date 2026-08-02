@@ -200,6 +200,9 @@ class Atendimento(Base):
     id_preceptor: Mapped[int] = mapped_column(Integer, nullable=False)
     dt_inicio_preceptor: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
+    # Adicionando id_unidade no atendimento
+    id_unidade: Mapped[int] = mapped_column(Integer, ForeignKey("unidade.id_unidade", ondelete="RESTRICT"), nullable=False)
+
     __table_args__ = (
         ForeignKeyConstraint(
             ["id_residente", "dt_inicio_residente"],
@@ -234,6 +237,9 @@ class AtendimentoProcedimento(Base):
     tempo_real_gasto: Mapped[int] = mapped_column(Integer, nullable=False)
     observacao_intercorrencias: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_faturado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # adicionando data_hora de inicio do procedimento
+    dt_hora_inicio: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     # Relacionamentos
     atendimento: Mapped["Atendimento"] = relationship(back_populates="procedimentos_associados")

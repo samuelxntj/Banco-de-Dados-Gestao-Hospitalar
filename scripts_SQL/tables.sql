@@ -97,7 +97,7 @@ CREATE TABLE UNIDADE(
     nome VARCHAR(14), -- Faltava uma vírgula.
 
     CONSTRAINT pk_unidade PRIMARY KEY (id_unidade),
-    CONSTRAINT  ck_nome CHECK (nome IN ('Enfermaria', 'UTI', 'PRONTO-SOCORRO', 'AMBULATORIO'))
+    CONSTRAINT  ck_nome CHECK (nome IN ('ENFERMARIA', 'UTI', 'PRONTO-SOCORRO', 'AMBULATORIO'))
 );
 
 -- TABELA PROCEDIMENTO:
@@ -169,6 +169,8 @@ CREATE TABLE ATENDIMENTO (
     id_preceptor INT NOT NULL,
     dt_inicio_preceptor TIMESTAMP NOT NULL,
 
+    id_unidade INT NOT NULL,
+
     CONSTRAINT PK_ATENDIMENTO PRIMARY KEY (id_atendimento),
     CONSTRAINT FK_ATENDIMENTO_PACIENTE FOREIGN KEY (id_paciente)
         REFERENCES PACIENTE(id_pessoa) ON DELETE RESTRICT,
@@ -177,6 +179,9 @@ CREATE TABLE ATENDIMENTO (
         REFERENCES RESIDENTE(id_pessoa, dt_inicio) ON DELETE RESTRICT,
     CONSTRAINT FK_ATENDIMENTO_PRECEPTOR FOREIGN KEY (id_preceptor, dt_inicio_preceptor)
         REFERENCES PRECEPTOR(id_pessoa, dt_inicio) ON DELETE RESTRICT,
+
+    CONSTRAINT FK_ATENDIMENTO_UNIDADE FOREIGN KEY (id_unidade)
+        REFERENCES UNIDADE(id_unidade) ON DELETE RESTRICT,
 
     CONSTRAINT CK_ATENDIMENTO_DURACAO CHECK (duracao_minutos > 0),
 
@@ -197,6 +202,8 @@ CREATE TABLE ATENDIMENTO_PROCEDIMENTO (
     qtd_executada INT NOT NULL DEFAULT 1,
     tempo_real_gasto INT NOT NULL,
     observacao_intercorrencias VARCHAR(255),
+
+    dt_hora_inicio TIMESTAMP NOT NULL,
 
     -- Flag de faturamento: um procedimento realizado só pode ser removido enquanto não faturado
     is_faturado BOOLEAN NOT NULL DEFAULT FALSE,

@@ -7,3 +7,6 @@ SQLAlchemy
 # Interface web (interface.py)
 streamlit
 pandas
+
+# ORM e execução das procedures em Python
+SQLAlchemy
